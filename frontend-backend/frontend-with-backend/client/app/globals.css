@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #6366f1;
+  --secondary: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+}
+
+html, body { height: 100%; }
+body { @apply bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500; } 
