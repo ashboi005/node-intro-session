@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { usePusher } from './hooks/usePusher';
 
 interface Feedback {
   id: number;
@@ -30,6 +31,9 @@ export default function FeedbackApp() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editMessage, setEditMessage] = useState('');
+  
+  // Initialize Pusher
+  const pusher = usePusher();
   const [currentView, setCurrentView] = useState<'main' | 'flagged'>('main');
   const [userToken, setUserToken] = useState<string>('');
 
@@ -46,10 +50,38 @@ export default function FeedbackApp() {
   useEffect(() => {
     if (userToken) {
       fetchFeedbacks();
-      const interval = setInterval(fetchFeedbacks, 10000); // simple polling
-      return () => clearInterval(interval);
     }
   }, [currentView, userToken]);
+
+  // Pusher real-time event listeners
+  useEffect(() => {
+    if (!pusher || !userToken) return;
+
+    const channel = pusher.subscribe('feedback-channel');
+
+    // Listen for new feedback
+    channel.bind('new-feedback', (data: Feedback) => {
+      setFeedbacks(prev => [data, ...prev]);
+      showNotification('success', 'New feedback received!');
+    });
+
+    // Listen for updated feedback
+    channel.bind('updated-feedback', (data: Feedback) => {
+      setFeedbacks(prev => prev.map(f => f.id === data.id ? data : f));
+      showNotification('success', 'Feedback updated!');
+    });
+
+    // Listen for deleted feedback
+    channel.bind('deleted-feedback', (data: { id: number }) => {
+      setFeedbacks(prev => prev.filter(f => f.id !== data.id));
+      showNotification('success', 'Feedback deleted!');
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe('feedback-channel');
+    };
+  }, [pusher, userToken]);
 
   const fetchFeedbacks = async () => {
     try {

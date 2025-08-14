@@ -4,56 +4,12 @@ import { Server } from 'socket.io';
 import OpenAI from 'openai';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import Pusher from 'pusher';
 import { prisma } from './lib/prisma';
 import { CreateFeedbackRequest, UpdateFeedbackRequest, FeedbackResponse, ApiResponse } from './types';
 
-dotenv.config();
-
-// Content Moderation Strategy:
-// 1. PRIMARY: OpenAI Moderation API (comprehensive, context-aware, multi-language)
-// 2. FALLBACK: Local word filter (basic protection when OpenAI is unavailable)
-
-// Basic inappropriate words list - used only as fallback when OpenAI is not available
-const inappropriateWords = [
-  // Common profanity
-  'damn', 'hell', 'shit', 'fuck', 'fucking', 'fucked', 'bitch', 'bastard', 'ass', 'asshole',
-  'crap', 'piss', 'cock', 'dick', 'pussy', 'whore', 'slut', 'fag', 'faggot', 'nigger', 'nigga',
-  // Variations and leetspeak
-  'f*ck', 'f**k', 'sh*t', 'sh**', 'b*tch', 'a**hole', 'wtf', 'stfu', 'gtfo',
-  'fu', 'fk', 'fck', 'sht', 'btch', 'azz', 'phuck', 'shyt', 'biatch', 'dumbass',
-  // Harassment and harmful content
-  'kill yourself', 'kys', 'die', 'stupid', 'idiot', 'moron', 'retard', 'retarded',
-  'loser', 'worthless', 'pathetic', 'waste of space', 'go die', 'should die',
-  'want to kill', 'will kill', 'gonna kill', 'going to kill', 'i kill', 'murder',
-  'threaten', 'threat', 'hurt you', 'harm you', 'beat you up', 'destroy you',
-  // Hate speech indicators (basic)
-  'hate', 'terrorist', 'nazi', 'hitler'
-];
-
-// Function to check for inappropriate content (fallback only)
-const checkInappropriateContent = (text: string): { isFlagged: boolean; flaggedReason: string | null } => {
-  const lowerText = text.toLowerCase();
-  const foundWords: string[] = [];
-  
-  inappropriateWords.forEach(word => {
-    if (lowerText.includes(word.toLowerCase())) {
-      foundWords.push(word);
-    }
-  });
-  
-  if (foundWords.length > 0) {
-    return {
-      isFlagged: true,
-      flaggedReason: `Local filter detected: ${foundWords.slice(0, 3).join(', ')}${foundWords.length > 3 ? '...' : ''}`
-    };
-  }
-  
-  return { isFlagged: false, flaggedReason: null };
-};
-
-const app = express();
+dotenv.config();const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -67,19 +23,21 @@ if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
+// Initialize Pusher
+let pusher: Pusher | null = null;
+if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET && process.env.PUSHER_CLUSTER) {
+  pusher = new Pusher({
+    appId: process.env.PUSHER_APP_ID,
+    key: process.env.PUSHER_KEY,
+    secret: process.env.PUSHER_SECRET,
+    cluster: process.env.PUSHER_CLUSTER,
+    useTLS: true
+  });
+}
+
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json({ limit: '1mb' }));
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX || '100'), // Allow environment override, default 100
-  message: { error: 'Too many requests, please try again later' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-app.use('/api/feedback', limiter);
 
 const formatFeedbackResponse = (feedback: any, currentUserToken?: string): FeedbackResponse => ({
   id: feedback.id,
@@ -119,28 +77,24 @@ app.post('/api/feedback', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Message must be 1000 characters or less' } as ApiResponse);
     }
 
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentSubmissions = await prisma.feedback.count({
-      where: { ipAddress: ipAddress, createdAt: { gte: oneHourAgo } }
+    // Check if this user has already submitted feedback (one submission per user)
+    const existingSubmission = await prisma.feedback.findFirst({
+      where: { 
+        userToken: userToken as string
+      } as any
     });
-    const maxSubmissionsPerHour = parseInt(process.env.MAX_SUBMISSIONS_PER_HOUR || '20');
-    if (recentSubmissions >= maxSubmissionsPerHour) {
-      return res.status(429).json({ success: false, error: 'Too many submissions from this IP address. Please try again later.' } as ApiResponse);
-    }
-
-    if (!anonymous) {
-      const existingName = await prisma.feedback.findFirst({
-        where: { name: effectiveName, createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } }
-      });
-      if (existingName) {
-        return res.status(400).json({ success: false, error: 'This name was already used recently. Please choose a different name or submit anonymously.' } as ApiResponse);
-      }
+    
+    if (existingSubmission) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'You have already submitted feedback. Only one submission per user is allowed.' 
+      } as ApiResponse);
     }
 
     let isFlagged = false;
     let flaggedReason: string | null = null;
 
-    // Primary: Use OpenAI moderation if available (much more comprehensive)
+    // Use OpenAI moderation
     if (openai) {
       try {
         const moderation = await openai.moderations.create({
@@ -155,19 +109,12 @@ app.post('/api/feedback', async (req, res) => {
             .map(([category]) => category);
           flaggedReason = `Content moderation: ${flaggedCategories.join(', ')}`;
         }
-      } catch (moderationError) {
-        console.warn('OpenAI Moderation API error:', moderationError);
-        // Fallback to local check if OpenAI fails
-        const localCheck = checkInappropriateContent(`${effectiveName}: ${message}`);
-        isFlagged = localCheck.isFlagged;
-        flaggedReason = localCheck.flaggedReason;
+      } catch (moderationError: any) {
+        console.warn(`OpenAI Moderation API error (${moderationError?.status || 'unknown'}): ${moderationError?.message || 'Unknown error'}`);
+        // If OpenAI fails, we'll still allow the submission but log the error
       }
     } else {
-      // Fallback: Use local word filter only if OpenAI is not available
-      console.warn('OpenAI API not configured, using local word filter as fallback');
-      const localCheck = checkInappropriateContent(`${effectiveName}: ${message}`);
-      isFlagged = localCheck.isFlagged;
-      flaggedReason = localCheck.flaggedReason;
+      console.warn('OpenAI API not configured - content moderation disabled');
     }
 
     const newFeedback = await prisma.feedback.create({
@@ -177,11 +124,22 @@ app.post('/api/feedback', async (req, res) => {
         isFlagged, 
         flaggedReason, 
         ipAddress,
-        userToken
-      }
+        userToken: userToken || null
+      } as any
     });
 
     const formattedFeedback = formatFeedbackResponse(newFeedback, userToken);
+    
+    // Send real-time update via Pusher
+    if (pusher) {
+      try {
+        await pusher.trigger('feedback-channel', 'new-feedback', formattedFeedback);
+      } catch (pusherError) {
+        console.warn('Pusher error:', pusherError);
+      }
+    }
+    
+    // Keep Socket.IO for local development fallback
     io.emit('newFeedback', formattedFeedback);
 
     res.status(201).json({ success: true, data: formattedFeedback } as ApiResponse<FeedbackResponse>);
@@ -217,7 +175,7 @@ app.get('/api/feedback/flagged', async (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const skip = (page - 1) * limit;
-    const userToken = req.headers['user-token'] as string; // Get user token from header
+    const userToken = req.headers['user-token'] as string; 
 
     const [feedbacks, totalCount] = await Promise.all([
       prisma.feedback.findMany({ 
@@ -304,19 +262,16 @@ app.put('/api/feedback/:id', async (req, res) => {
           }
         } catch (moderationError) {
           console.warn('OpenAI Moderation API error:', moderationError);
-          // Fallback to local check if OpenAI fails
-          const localCheck = checkInappropriateContent(contentToCheck);
           moderationUpdate = {
-            isFlagged: localCheck.isFlagged,
-            flaggedReason: localCheck.flaggedReason
+            isFlagged: false,
+            flaggedReason: null
           };
         }
       } else {
-        // Fallback: Use local word filter only if OpenAI is not available
-        const localCheck = checkInappropriateContent(contentToCheck);
+        console.warn('OpenAI API not configured - content moderation disabled');
         moderationUpdate = {
-          isFlagged: localCheck.isFlagged,
-          flaggedReason: localCheck.flaggedReason
+          isFlagged: false,
+          flaggedReason: null
         };
       }
     }
@@ -327,6 +282,17 @@ app.put('/api/feedback/:id', async (req, res) => {
     });
 
     const formattedFeedback = formatFeedbackResponse(updatedFeedback, userToken);
+    
+    // Send real-time update via Pusher
+    if (pusher) {
+      try {
+        await pusher.trigger('feedback-channel', 'updated-feedback', formattedFeedback);
+      } catch (pusherError) {
+        console.warn('Pusher error:', pusherError);
+      }
+    }
+    
+    // Keep Socket.IO for local development fallback
     io.emit('updatedFeedback', formattedFeedback);
 
     res.json({ success: true, data: formattedFeedback } as ApiResponse<FeedbackResponse>);
@@ -362,6 +328,16 @@ app.delete('/api/feedback/:id', async (req, res) => {
 
     await prisma.feedback.delete({ where: { id } });
 
+    // Send real-time update via Pusher
+    if (pusher) {
+      try {
+        await pusher.trigger('feedback-channel', 'deleted-feedback', { id });
+      } catch (pusherError) {
+        console.warn('Pusher error:', pusherError);
+      }
+    }
+    
+    // Keep Socket.IO for local development fallback
     io.emit('deletedFeedback', { id });
 
     res.json({ success: true, data: { id } } as ApiResponse);
@@ -422,23 +398,6 @@ async function startServer() {
     console.log('Database connected successfully');
     
     server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
-      console.log(`📊 Prisma Studio: Run 'npm run db:studio' to open database GUI`);
-      
-      // Display rate limiting configuration
-      console.log(`🚦 Rate Limits:`);
-      console.log(`   • ${parseInt(process.env.RATE_LIMIT_MAX || '100')} requests per 15 minutes`);
-      console.log(`   • ${parseInt(process.env.MAX_SUBMISSIONS_PER_HOUR || '20')} submissions per hour per IP`);
-      
-      // Display content moderation status
-      if (openai) {
-        console.log('🔒 Content Moderation: OpenAI Moderation API (Primary) + Local Filter (Fallback)');
-      } else {
-        console.log('⚠️  Content Moderation: Local Filter Only (OpenAI API key not configured)');
-        console.log('   📝 For better moderation, add OPENAI_API_KEY to your .env file');
-        console.log('   🔗 Get API key: https://platform.openai.com/api-keys');
-      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
