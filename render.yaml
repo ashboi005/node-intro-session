@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: feedback-backend
+    runtime: node
+    buildCommand: cd frontend-backend/frontend-with-backend/server && npm install && npm run build
+    startCommand: cd frontend-backend/frontend-with-backend/server && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0

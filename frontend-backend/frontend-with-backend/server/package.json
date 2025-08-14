@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "nodemon src/server.ts",
-    "build": "npx prisma generate && npx tsc",
+    "build": "npm install && npx prisma generate && npx tsc",
     "start": "node dist/server.js",
+    "postinstall": "npx prisma generate",
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
