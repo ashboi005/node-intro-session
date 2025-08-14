@@ -5,9 +5,11 @@ import OpenAI from 'openai';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-const Pusher = require('pusher');
 import { prisma } from './lib/prisma';
 import { CreateFeedbackRequest, UpdateFeedbackRequest, FeedbackResponse, ApiResponse } from './types';
+
+// Import Pusher with proper typing
+const Pusher = require('pusher') as any;
 
 dotenv.config();const app = express();
 const server = http.createServer(app);
@@ -111,7 +113,6 @@ app.post('/api/feedback', async (req, res) => {
         }
       } catch (moderationError: any) {
         console.warn(`OpenAI Moderation API error (${moderationError?.status || 'unknown'}): ${moderationError?.message || 'Unknown error'}`);
-        // If OpenAI fails, we'll still allow the submission but log the error
       }
     } else {
       console.warn('OpenAI API not configured - content moderation disabled');
