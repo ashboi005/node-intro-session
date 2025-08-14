@@ -17,6 +17,7 @@ model Feedback {
   isFlagged     Boolean  @default(false) @map("is_flagged")
   flaggedReason String?  @map("flagged_reason") @db.Text
   ipAddress     String?  @map("ip_address") @db.VarChar(45)
+  userToken     String?  @map("user_token") @db.VarChar(255) // For ownership tracking
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
