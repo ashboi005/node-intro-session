@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Feedback {
@@ -13,7 +13,7 @@ interface Feedback {
   canEdit?: boolean;
 }
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -43,15 +43,7 @@ export default function FeedbackApp() {
     setUserToken(token);
   }, []);
 
-  useEffect(() => {
-    if (userToken) {
-      fetchFeedbacks();
-      const interval = setInterval(fetchFeedbacks, 10000); // simple polling
-      return () => clearInterval(interval);
-    }
-  }, [currentView, userToken]);
-
-  const fetchFeedbacks = async () => {
+  const fetchFeedbacks = useCallback(async () => {
     try {
       const endpoint = currentView === 'flagged' 
         ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/feedback/flagged`
@@ -63,8 +55,18 @@ export default function FeedbackApp() {
       });
       const result: ApiResponse<{feedbacks: Feedback[]}> = await response.json();
       if (result.success && result.data) { setFeedbacks(result.data.feedbacks); }
-    } catch (error) { showNotification('error', 'Failed to load feedbacks'); }
-  };
+    } catch {
+      showNotification('error', 'Failed to load feedbacks');
+    }
+  }, [currentView, userToken]);
+
+  useEffect(() => {
+    if (userToken) {
+      fetchFeedbacks();
+      const interval = setInterval(fetchFeedbacks, 10000); // simple polling
+      return () => clearInterval(interval);
+    }
+  }, [fetchFeedbacks, userToken]);
 
   const submitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +82,9 @@ export default function FeedbackApp() {
         setFeedbacks(prev => [result.data as Feedback, ...prev]);
         showNotification('success', 'Feedback submitted successfully!');
       } else { showNotification('error', result.error || 'Failed to submit feedback'); }
-    } catch (error) { showNotification('error', 'Network error. Please try again.'); }
+    } catch {
+      showNotification('error', 'Network error. Please try again.');
+    }
     setLoading(false);
   };
 
@@ -114,7 +118,9 @@ export default function FeedbackApp() {
         cancelEdit();
         showNotification('success', 'Feedback updated successfully!');
       } else { showNotification('error', result.error || 'Failed to update feedback'); }
-    } catch (error) { showNotification('error', 'Network error. Please try again.'); }
+    } catch {
+      showNotification('error', 'Network error. Please try again.');
+    }
     setLoading(false);
   };
 
@@ -132,7 +138,9 @@ export default function FeedbackApp() {
         setFeedbacks(prev => prev.filter(f => f.id !== id));
         showNotification('success', 'Feedback deleted successfully!');
       } else { showNotification('error', result.error || 'Failed to delete feedback'); }
-    } catch (error) { showNotification('error', 'Network error. Please try again.'); }
+    } catch {
+      showNotification('error', 'Network error. Please try again.');
+    }
     setLoading(false);
   };
 
