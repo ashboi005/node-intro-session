@@ -139,9 +139,6 @@ app.post('/api/feedback', async (req, res) => {
         console.warn('Pusher error:', pusherError);
       }
     }
-    
-    // Keep Socket.IO for local development fallback
-    io.emit('newFeedback', formattedFeedback);
 
     res.status(201).json({ success: true, data: formattedFeedback } as ApiResponse<FeedbackResponse>);
   } catch (error) {
@@ -292,9 +289,6 @@ app.put('/api/feedback/:id', async (req, res) => {
         console.warn('Pusher error:', pusherError);
       }
     }
-    
-    // Keep Socket.IO for local development fallback
-    io.emit('updatedFeedback', formattedFeedback);
 
     res.json({ success: true, data: formattedFeedback } as ApiResponse<FeedbackResponse>);
   } catch (error) {
@@ -337,9 +331,6 @@ app.delete('/api/feedback/:id', async (req, res) => {
         console.warn('Pusher error:', pusherError);
       }
     }
-    
-    // Keep Socket.IO for local development fallback
-    io.emit('deletedFeedback', { id });
 
     res.json({ success: true, data: { id } } as ApiResponse);
   } catch (error) {

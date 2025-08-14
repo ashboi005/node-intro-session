@@ -108,7 +108,6 @@ export default function FeedbackApp() {
       const result: ApiResponse<Feedback> = await response.json();
       if (result.success && result.data) {
         setName(''); setMessage(''); setAnonymous(false);
-        setFeedbacks(prev => [result.data as Feedback, ...prev]);
         showNotification('success', 'Feedback submitted successfully!');
       } else { showNotification('error', result.error || 'Failed to submit feedback'); }
     } catch {
@@ -143,7 +142,6 @@ export default function FeedbackApp() {
       });
       const result: ApiResponse<Feedback> = await response.json();
       if (result.success && result.data) {
-        setFeedbacks(prev => prev.map(f => f.id === id ? result.data as Feedback : f));
         cancelEdit();
         showNotification('success', 'Feedback updated successfully!');
       } else { showNotification('error', result.error || 'Failed to update feedback'); }
@@ -164,7 +162,6 @@ export default function FeedbackApp() {
       });
       const result: ApiResponse = await response.json();
       if (result.success) {
-        setFeedbacks(prev => prev.filter(f => f.id !== id));
         showNotification('success', 'Feedback deleted successfully!');
       } else { showNotification('error', result.error || 'Failed to delete feedback'); }
     } catch {
