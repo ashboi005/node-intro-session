@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import Pusher from 'pusher';
+const Pusher = require('pusher');
 import { prisma } from './lib/prisma';
 import { CreateFeedbackRequest, UpdateFeedbackRequest, FeedbackResponse, ApiResponse } from './types';
 
@@ -24,7 +24,7 @@ if (process.env.OPENAI_API_KEY) {
 }
 
 // Initialize Pusher
-let pusher: Pusher | null = null;
+let pusher: any | null = null;
 if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET && process.env.PUSHER_CLUSTER) {
   pusher = new Pusher({
     appId: process.env.PUSHER_APP_ID,
