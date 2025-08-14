@@ -25,7 +25,6 @@ export default function FeedbackApp() {
   const [message, setMessage] = useState('');
   const [anonymous, setAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showFlagged, setShowFlagged] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
@@ -148,190 +147,213 @@ export default function FeedbackApp() {
   const flaggedFeedbacks = feedbacks.filter(f => f.isFlagged);
 
   return (
-    <div className="min-h-screen p-6 bg-[color:var(--background)]">
-      <div className="max-w-2xl mx-auto bg-white/80 backdrop-blur border border-slate-200 rounded-2xl shadow-sm">
-        <div className="p-6 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">Anonymous Feedback</h1>
-              <p className="text-sm text-slate-500">Share your thoughts. Flagged feedback is filtered by content moderation.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">Full Stack</span>
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button 
-                  onClick={() => setCurrentView('main')}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    currentView === 'main' 
-                      ? 'bg-white text-slate-900 shadow-sm' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Main Feed
-                </button>
-                <button 
-                  onClick={() => setCurrentView('flagged')}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    currentView === 'flagged' 
-                      ? 'bg-white text-slate-900 shadow-sm' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Flagged ({flaggedFeedbacks.length})
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen p-4 bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Anonymous Feedback</h1>
+          <p className="text-slate-600">Share your thoughts securely. All content is moderated.</p>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-white rounded-xl p-1 shadow-sm border border-slate-200">
+            <button 
+              onClick={() => setCurrentView('main')}
+              className={`px-6 py-2 text-sm font-medium rounded-lg transition-all ${
+                currentView === 'main' 
+                  ? 'bg-indigo-600 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Main Feed
+              {currentView === 'main' && ` (${regularFeedbacks.length})`}
+            </button>
+            <button 
+              onClick={() => setCurrentView('flagged')}
+              className={`px-6 py-2 text-sm font-medium rounded-lg transition-all ${
+                currentView === 'flagged' 
+                  ? 'bg-red-600 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              Flagged
+              {flaggedFeedbacks.length > 0 && ` (${flaggedFeedbacks.length})`}
+            </button>
           </div>
         </div>
 
-        <div className="px-6 pb-6 space-y-4">
-          {currentView === 'main' ? (
-            <>
-              <form onSubmit={submitFeedback} className="space-y-4 -mt-2">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Your Name</label>
-                    <input value={name} onChange={(e) => setName(e.target.value)} disabled={anonymous}
-                           placeholder={anonymous ? 'Anonymous' : 'Enter your name'}
-                           className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        {/* Main Content */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6 space-y-6">
+            {currentView === 'main' ? (
+              <>
+                {/* Submission Form */}
+                <form onSubmit={submitFeedback} className="space-y-4 border-b border-slate-100 pb-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Your Name</label>
+                      <input 
+                        value={name} 
+                        onChange={(e) => setName(e.target.value)} 
+                        disabled={anonymous}
+                        placeholder={anonymous ? 'Anonymous' : 'Enter your name'}
+                        className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-slate-50" 
+                      />
+                    </div>
+                    <label className="mt-8 shrink-0 inline-flex items-center gap-3 text-sm text-slate-700">
+                      <input 
+                        type="checkbox" 
+                        checked={anonymous} 
+                        onChange={(e) => setAnonymous(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" 
+                      />
+                      Submit anonymously
+                    </label>
                   </div>
-                  <label className="mt-6 shrink-0 inline-flex items-center gap-2 text-sm text-slate-700">
-                    <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)}
-                           className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                    Submit anonymously
-                  </label>
-                </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Your Feedback</label>
+                    <textarea 
+                      value={message} 
+                      onChange={(e) => setMessage(e.target.value)} 
+                      required 
+                      rows={4}
+                      placeholder="Write your feedback here..."
+                      className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 text-white font-medium py-3 hover:bg-indigo-500 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+                  >
+                    {loading ? 'Submitting…' : 'Submit Feedback'}
+                  </button>
+                </form>
+
+                {/* Recent Feedback Section */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Your Feedback</label>
-                  <textarea value={message} onChange={(e) => setMessage(e.target.value)} required rows={4}
-                            placeholder="Write your feedback here..."
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                </div>
-
-                <button type="submit" disabled={loading}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 text-white font-medium py-2.5 hover:bg-indigo-500 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60">
-                  {loading ? 'Submitting…' : 'Submit Feedback'}
-                </button>
-              </form>
-
-              <div className="flex items-center justify-between pt-4">
-                <h3 className="text-base font-semibold text-slate-900">Recent Feedback</h3>
-                <button onClick={() => setShowFlagged(v => !v)} className="text-sm text-indigo-600 hover:text-indigo-500">
-                  {showFlagged ? 'Hide flagged' : `Show flagged (${flaggedFeedbacks.length})`}
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {regularFeedbacks.map(item => (
-                  <div key={item.id} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                    {editingId === item.id ? (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-                          <input 
-                            value={editName} 
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
-                          <textarea 
-                            value={editMessage} 
-                            onChange={(e) => setEditMessage(e.target.value)}
-                            rows={3}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => updateFeedback(item.id)}
-                            disabled={loading}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-500 disabled:opacity-50"
-                          >
-                            <CheckIcon className="w-4 h-4" />
-                            Save
-                          </button>
-                          <button 
-                            onClick={cancelEdit}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-500"
-                          >
-                            <XMarkIcon className="w-4 h-4" />
-                            Cancel
-                          </button>
-                        </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Feedback</h3>
+                  <div className="space-y-3">
+                    {regularFeedbacks.map(item => (
+                      <div key={item.id} className="bg-slate-50 rounded-xl p-5 border border-slate-200 hover:border-slate-300 transition-colors">
+                        {editingId === item.id ? (
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
+                              <input 
+                                value={editName} 
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
+                              <textarea 
+                                value={editMessage} 
+                                onChange={(e) => setEditMessage(e.target.value)}
+                                rows={3}
+                                className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              />
+                            </div>
+                            <div className="flex gap-3">
+                              <button 
+                                onClick={() => updateFeedback(item.id)}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 disabled:opacity-50 transition-colors"
+                              >
+                                <CheckIcon className="w-4 h-4" />
+                                Save Changes
+                              </button>
+                              <button 
+                                onClick={cancelEdit}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-500 transition-colors"
+                              >
+                                <XMarkIcon className="w-4 h-4" />
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-sm font-semibold text-slate-900">{item.name}</span>
+                                <span className="text-xs text-slate-500">•</span>
+                                <span className="text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</span>
+                              </div>
+                              <p className="text-slate-700 leading-relaxed">{item.message}</p>
+                            </div>
+                            {item.canEdit && (
+                              <div className="flex gap-1 ml-4">
+                                <button 
+                                  onClick={() => startEdit(item)}
+                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title="Edit your feedback"
+                                >
+                                  <PencilIcon className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => deleteFeedback(item.id)}
+                                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete your feedback"
+                                >
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-slate-900">{item.name}</div>
-                            <p className="text-slate-700 mt-1">{item.message}</p>
-                            <div className="text-xs text-slate-500 mt-2">{new Date(item.createdAt).toLocaleString()}</div>
-                          </div>
-                          <div className="flex gap-1 ml-2">
-                            <button 
-                              onClick={() => startEdit(item)}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                              title="Edit feedback"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => deleteFeedback(item.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Delete feedback"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </>
+                    ))}
+                    {regularFeedbacks.length === 0 && (
+                      <div className="text-center py-8 text-slate-500">
+                        <p>No feedback yet. Be the first to share your thoughts!</p>
+                      </div>
                     )}
                   </div>
-                ))}
-                {regularFeedbacks.length === 0 && (
-                  <div className="text-sm text-slate-500">No feedback yet.</div>
-                )}
-              </div>
-
-              {showFlagged && (
-                <div className="mt-4 space-y-3">
-                  <div className="text-sm font-medium text-slate-900">Flagged (hidden by default)</div>
+                </div>
+              </>
+            ) : (
+              /* Flagged Content View */
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Flagged Content</h3>
+                <div className="space-y-3">
                   {flaggedFeedbacks.map(item => (
-                    <div key={item.id} className="bg-white rounded-lg p-4 border border-rose-200">
+                    <div key={item.id} className="bg-red-50 rounded-xl p-5 border border-red-200">
                       {editingId === item.id ? (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
                             <input 
                               value={editName} 
                               onChange={(e) => setEditName(e.target.value)}
-                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
                             <textarea 
                               value={editMessage} 
                               onChange={(e) => setEditMessage(e.target.value)}
                               rows={3}
-                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             />
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-3">
                             <button 
                               onClick={() => updateFeedback(item.id)}
                               disabled={loading}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-500 disabled:opacity-50"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 disabled:opacity-50 transition-colors"
                             >
                               <CheckIcon className="w-4 h-4" />
-                              Save
+                              Save Changes
                             </button>
                             <button 
                               onClick={cancelEdit}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-500"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-500 transition-colors"
                             >
                               <XMarkIcon className="w-4 h-4" />
                               Cancel
@@ -339,142 +361,65 @@ export default function FeedbackApp() {
                           </div>
                         </div>
                       ) : (
-                        <>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-slate-900">{item.name}</div>
-                              <p className="text-slate-700 mt-1">{item.message}</p>
-                              <div className="text-xs text-slate-500 mt-2">
-                                {new Date(item.createdAt).toLocaleString()} • {item.flaggedReason || 'Flagged'}
-                              </div>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-sm font-semibold text-slate-900">{item.name}</span>
+                              <span className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-full font-medium">
+                                Flagged
+                              </span>
                             </div>
-                            <div className="flex gap-1 ml-2">
+                            <p className="text-slate-700 leading-relaxed mb-3">{item.message}</p>
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <span>{new Date(item.createdAt).toLocaleString()}</span>
+                              <span>•</span>
+                              <span className="text-red-600 font-medium">
+                                Reason: {item.flaggedReason || 'Flagged by moderation'}
+                              </span>
+                            </div>
+                          </div>
+                          {item.canEdit && (
+                            <div className="flex gap-1 ml-4">
                               <button 
                                 onClick={() => startEdit(item)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                title="Edit feedback"
+                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                title="Edit your feedback"
                               >
                                 <PencilIcon className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => deleteFeedback(item.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete feedback"
+                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete your feedback"
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </button>
                             </div>
-                          </div>
-                        </>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
                   {flaggedFeedbacks.length === 0 && (
-                    <div className="text-sm text-slate-500">No flagged feedback.</div>
+                    <div className="text-center py-8 text-slate-500">
+                      <p>No flagged content found.</p>
+                    </div>
                   )}
                 </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-slate-900">Flagged Content Management</h3>
-                <div className="text-sm text-slate-500">{feedbacks.length} flagged items</div>
               </div>
-
-              <div className="space-y-3">
-                {feedbacks.map(item => (
-                  <div key={item.id} className="bg-rose-50 rounded-lg p-4 border border-rose-200">
-                    {editingId === item.id ? (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-                          <input 
-                            value={editName} 
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
-                          <textarea 
-                            value={editMessage} 
-                            onChange={(e) => setEditMessage(e.target.value)}
-                            rows={3}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => updateFeedback(item.id)}
-                            disabled={loading}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-500 disabled:opacity-50"
-                          >
-                            <CheckIcon className="w-4 h-4" />
-                            Save
-                          </button>
-                          <button 
-                            onClick={cancelEdit}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-500"
-                          >
-                            <XMarkIcon className="w-4 h-4" />
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="text-sm font-medium text-slate-900">{item.name}</div>
-                              <span className="text-xs px-2 py-1 bg-rose-100 text-rose-700 rounded-full">
-                                Flagged
-                              </span>
-                            </div>
-                            <p className="text-slate-700 mt-1">{item.message}</p>
-                            <div className="text-xs text-slate-500 mt-2">
-                              {new Date(item.createdAt).toLocaleString()}
-                            </div>
-                            <div className="text-xs text-rose-600 mt-1 font-medium">
-                              Reason: {item.flaggedReason || 'Flagged by moderation'}
-                            </div>
-                          </div>
-                          <div className="flex gap-1 ml-2">
-                            <button 
-                              onClick={() => startEdit(item)}
-                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                              title="Edit to remove flag"
-                            >
-                              <PencilIcon className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => deleteFeedback(item.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Delete feedback"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-                {feedbacks.length === 0 && (
-                  <div className="text-sm text-slate-500">No flagged feedback.</div>
-                )}
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Notification Toast */}
+        {notification && (
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white font-medium transition-all z-50 ${
+            notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          }`}>
+            {notification.message}
+          </div>
+        )}
       </div>
-
-      {notification && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg shadow-md text-white ${notification.type === 'success' ? 'bg-green-600' : 'bg-rose-600'}`}>
-          {notification.message}
-        </div>
-      )}
     </div>
   );
 } 
