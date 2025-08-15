@@ -178,8 +178,8 @@ export default function FeedbackApp() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Anonymous Feedback</h1>
-          <p className="text-slate-600">Share your thoughts securely. All content is moderated.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2"> <span className='text-red-600'>CESS</span> X <span className='text-blue-600'>Node</span> Live Workshop Feedback</h1>
+          <p className="text-slate-600">What do you think about the Workshop? How's it going?</p>
         </div>
 
         {/* Navigation */}
@@ -447,6 +447,9 @@ export default function FeedbackApp() {
           </div>
         )}
       </div>
+         <footer className="mt-12 text-center text-sm text-slate-500">
+            <p>&copy; {new Date().getFullYear()} <a href="https://www.instagram.com/node.hesh?igsh=M3JxYzBoNHJ3OHlj" className='underline hover:text-cyan-500'>Node</a> | All Rights Reserved.</p>
+        </footer>
     </div>
   );
 } 

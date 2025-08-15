@@ -109,7 +109,7 @@ app.post('/api/feedback', async (req, res) => {
           const flaggedCategories = Object.entries(result.categories || {})
             .filter(([_, flagged]) => flagged as any)
             .map(([category]) => category);
-          flaggedReason = `Content moderation: ${flaggedCategories.join(', ')}`;
+          flaggedReason = `${flaggedCategories.join(', ')}`;
         }
       } catch (moderationError: any) {
         console.warn(`OpenAI Moderation API error (${moderationError?.status || 'unknown'}): ${moderationError?.message || 'Unknown error'}`);
