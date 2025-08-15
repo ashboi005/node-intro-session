@@ -9,7 +9,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>Anonymous Feedback</h1>
+            <h1><span style="color: #dc2626;">CESS</span> X <span style="color: #2563eb;">Node</span> Live Workshop Feedback</h1>
+            <p>What do you think about the Workshop? How's it going?</p>
             <span class="badge">Frontend Only</span>
         </header>
         
@@ -37,6 +38,14 @@
             ⚠️ <strong>Note:</strong> Data will disappear when you refresh the page!
         </div>
     </div>
+    
+    <footer style="margin-top: 3rem; text-align: center; font-size: 0.875rem; color: #64748b;">
+        <p>&copy; <span id="current-year"></span> <a href="https://www.instagram.com/node.hesh?igsh=M3JxYzBoNHJ3OHlj" style="text-decoration: underline; color: #06b6d4;">Node</a> | All Rights Reserved.</p>
+    </footer>
+    
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
     <script src="script.js"></script>
 </body>
 </html> 
