@@ -46,11 +46,28 @@ export default function FeedbackApp() {
     setUserToken(token);
   }, []);
 
+  const fetchFeedbacks = useCallback(async () => {
+    try {
+      const endpoint = currentView === 'flagged' 
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/feedback/flagged`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/feedback`;
+      const response = await fetch(endpoint, {
+        headers: {
+          'user-token': userToken
+        }
+      });
+      const result: ApiResponse<{feedbacks: Feedback[]}> = await response.json();
+      if (result.success && result.data) { setFeedbacks(result.data.feedbacks); }
+    } catch {
+      showNotification('error', 'Failed to load feedbacks');
+    }
+  }, [currentView, userToken]);
+
   useEffect(() => {
     if (userToken) {
       fetchFeedbacks();
     }
-  }, [currentView, userToken]);
+  }, [currentView, userToken, fetchFeedbacks]);
 
   // Pusher real-time event listeners
   useEffect(() => {
@@ -81,21 +98,6 @@ export default function FeedbackApp() {
       pusher.unsubscribe('feedback-channel');
     };
   }, [pusher, userToken]);
-
-  const fetchFeedbacks = async () => {
-    try {
-      const endpoint = currentView === 'flagged' 
-        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/feedback/flagged`
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/feedback`;
-      const response = await fetch(endpoint, {
-        headers: {
-          'user-token': userToken
-        }
-      });
-      const result: ApiResponse<{feedbacks: Feedback[]}> = await response.json();
-      if (result.success && result.data) { setFeedbacks(result.data.feedbacks); }
-    } catch (error) { showNotification('error', 'Failed to load feedbacks'); }
-  };
 
   const submitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +181,7 @@ export default function FeedbackApp() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-slate-900 mb-2"> <span className='text-red-600'>CESS</span> X <span className='text-blue-600'>Node</span> Live Workshop Feedback</h1>
-          <p className="text-slate-600">What do you think about the Workshop? How's it going?</p>
+          <p className="text-slate-600">What do you think about the Workshop? How&apos;s it going?</p>
         </div>
 
         {/* Navigation */}
