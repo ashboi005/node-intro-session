@@ -191,6 +191,7 @@ export default function HomePage() {
             <Glow variant="interactive" className="opacity-40 scale-150 blur-3xl" />
             
             <div className="text-center mb-8 z-10">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2"> <span className='text-red-600'>CESS</span> X <span className='text-blue-600'>Node</span></h1>
                 <h1 className="text-4xl sm:text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-orange-300">
                     The Unbreakable Chain
                 </h1>
@@ -198,6 +199,7 @@ export default function HomePage() {
                     This is a live simulation of a blockchain. Each block is cryptographically linked to the one before it. 
                     Try changing the data in any block to see the instant effect on the chain&apos;s integrity.
                 </p>
+                
             </div>
             
             {isLoading ? (
@@ -215,8 +217,14 @@ export default function HomePage() {
                             onDataChange={handleDataChange}
                         />
                     ))}
-                </div>
+                      <div>
+                   <footer className="mt-12 text-center text-sm text-slate-500">
+                          <p>&copy; {new Date().getFullYear()} <a href="https://www.instagram.com/node.hesh?igsh=M3JxYzBoNHJ3OHlj" className='underline hover:text-cyan-500'>Node</a> | All Rights Reserved.</p>
+                      </footer>
+                </div>  
+                </div>          
             )}
         </main>
+        
     );
 }
