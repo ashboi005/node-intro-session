@@ -145,8 +145,8 @@ dd {
 .highlight-box::before {
     content: '💡';
     position: absolute;
-    top: -10px;
-    left: var(--spacing-md);
+    top: -25px;
+    left: -15px;
     background: var(--accent-color);
     padding: var(--spacing-xs);
     border-radius: 50%;
@@ -295,11 +295,9 @@ dd {
 }
 
 .css-quote::before {
-    content: '"';
     font-size: 4rem;
     color: var(--primary-color);
     position: absolute;
-    top: -10px;
     left: var(--spacing-md);
     opacity: 0.3;
 }
