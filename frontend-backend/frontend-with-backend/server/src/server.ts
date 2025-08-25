@@ -7,6 +7,80 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
 import { CreateFeedbackRequest, UpdateFeedbackRequest, FeedbackResponse, ApiResponse } from './types';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+//jugaad lol: will rotate b/w diff api keys to avoid hitting the rate limit
+const geminiApiKeys = [
+  process.env.GEMINI_API_KEY_1,
+  process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+].filter(Boolean); 
+
+let currentGeminiKeyIndex = 0;
+
+function getNextGeminiClient() {
+  if (geminiApiKeys.length === 0) return null;
+  
+  const apiKey = geminiApiKeys[currentGeminiKeyIndex];
+  currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % geminiApiKeys.length;
+  
+  return new GoogleGenerativeAI(apiKey as string);
+}
+
+async function checkWithGemini(text: string): Promise<{ isFlagged: boolean; reason: string | null }> {
+  const genAI = getNextGeminiClient();
+  if (!genAI) {
+    console.warn('No Gemini API keys configured');
+    return { isFlagged: false, reason: null };
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `
+You are a content moderator for a programming workshop/interactive session. Analyze the following text for inappropriate content in ANY language (especially English, Hindi, Punjabi, and other Indian languages).
+
+Text to analyze: "${text}"
+
+Check for:
+- Vulgar language or profanity
+- Hate speech or discriminatory content  
+- Inappropriate sexual content
+- Harassment or bullying language
+- Spam or promotional content
+- Any content not suitable for a professional workshop environment
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "isFlagged": true/false,
+  "reason": "brief explanation if flagged, null if not flagged"
+}
+
+Be strict but fair - this is for a professional educational environment.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text_response = response.text();
+    
+    const cleanedResponse = text_response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const geminiResult = JSON.parse(cleanedResponse);
+    
+    return {
+      isFlagged: Boolean(geminiResult.isFlagged),
+      reason: geminiResult.reason
+    };
+    
+  } catch (error: any) {
+    console.warn(`Gemini API error with key ${currentGeminiKeyIndex}:`, error?.message || 'Unknown error');
+    
+    if (error?.message?.includes('quota') || error?.message?.includes('rate limit')) {
+      console.log(`Switching to next Gemini API key...`);
+    }
+    
+    return { isFlagged: false, reason: null };
+  }
+}
 
 // Import Pusher with proper typing
 const Pusher = require('pusher') as any;
@@ -93,31 +167,51 @@ app.post('/api/feedback', async (req, res) => {
       } as ApiResponse);
     }
 
-    let isFlagged = false;
-    let flaggedReason: string | null = null;
+let isFlagged = false;
+let flaggedReason: string | null = null;
 
-    // Use OpenAI moderation
-    if (openai) {
-      try {
-        const moderation = await openai.moderations.create({
-          model: 'omni-moderation-latest',
-          input: `${effectiveName || 'Anonymous'}: ${message}`
-        });
-        const result: any = (moderation as any).results?.[0];
-        if (result && result.flagged) {
-          isFlagged = true;
-          const flaggedCategories = Object.entries(result.categories || {})
-            .filter(([_, flagged]) => flagged as any)
-            .map(([category]) => category);
-          flaggedReason = `${flaggedCategories.join(', ')}`;
-        }
-      } catch (moderationError: any) {
-        console.warn(`OpenAI Moderation API error (${moderationError?.status || 'unknown'}): ${moderationError?.message || 'Unknown error'}`);
-      }
+if (openai) {
+  try {
+    console.log('Checking with OpenAI moderation...');
+    const moderation = await openai.moderations.create({
+      model: 'omni-moderation-latest',
+      input: `${effectiveName || 'Anonymous'}: ${message}`
+    });
+    const result: any = (moderation as any).results?.[0];
+    
+    if (result && result.flagged) {
+      isFlagged = true;
+      const flaggedCategories = Object.entries(result.categories || {})
+        .filter(([_, flagged]) => flagged as any)
+        .map(([category]) => category);
+      flaggedReason = `${flaggedCategories.join(', ')}`;
+      console.log('OpenAI flagged content:', flaggedReason);
     } else {
-      console.warn('OpenAI API not configured - content moderation disabled');
+      console.log('OpenAI approved content, checking with Gemini for multi-language...');
+      const geminiCheck = await checkWithGemini(`${effectiveName || 'Anonymous'}: ${message}`);
+      if (geminiCheck.isFlagged) {
+        isFlagged = true;
+        flaggedReason = `${geminiCheck.reason}`;
+        console.log('Gemini flagged content:', flaggedReason);
+      } else {
+        console.log('Both OpenAI and Gemini approved content');
+      }
     }
+    
+  } catch (moderationError: any) {
+    console.warn(`OpenAI Moderation API error (${moderationError?.status || 'unknown'}): ${moderationError?.message || 'Unknown error'}`);
+    console.log('OpenAI failed, using Gemini as fallback...');
+    
+    const geminiCheck = await checkWithGemini(`${effectiveName || 'Anonymous'}: ${message}`);
+    if (geminiCheck.isFlagged) {
+      isFlagged = true;
+      flaggedReason = `${geminiCheck.reason}`;
+      console.log('Gemini flagged content (fallback):', flaggedReason);
+    }
+  }
+} 
 
+console.log(`Final moderation result: ${isFlagged ? 'FLAGGED' : 'APPROVED'}`);
     const newFeedback = await prisma.feedback.create({
       data: { 
         name: effectiveName || 'Anonymous', 
