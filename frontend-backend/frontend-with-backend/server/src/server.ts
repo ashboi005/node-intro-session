@@ -54,7 +54,7 @@ Check for:
 Respond ONLY with a JSON object in this exact format:
 {
   "isFlagged": true/false,
-  "reason": "brief explanation if flagged, null if not flagged"
+  "reason": "brief explanation in less than 10 words if flagged, null if not flagged"
 }
 
 Be strict but fair - this is for a professional educational environment.`;
