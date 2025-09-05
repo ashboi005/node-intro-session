@@ -33,8 +33,14 @@
         .hidden-text {
             color: #000000;
             font-size: 16px;
-            margin: 60px 0;
+            margin: 20px 0;
             user-select: text;
+        }
+        
+        .hidden-link {
+            color: #000000;
+            cursor: pointer;
+            text-decoration: underline;
         }
         
         .title {
@@ -63,7 +69,7 @@
         </p>
         
         <div class="hidden-text">
-            //these fools don't know I accidentally left the final QR code in my other insta story lmao //will delete in 2 hours //idiots will never figure it out
+            //these fools don't know I accidentally left the real challenge <span class="hidden-link" id="secretLink">here</span> lmao //they'll never find it //too dumb to look properly
         </div>
         
         <p class="visible-text">
@@ -82,5 +88,31 @@
             Get rekt. | &copy; 2024 CESS X Node
         </div>
     </div>
+
+    <script>
+    const secretLink = document.getElementById('secretLink');
+    const rickrollURL = 'https://lolhackedagain.nodehq.in'; 
+    const finalHintURL = 'https://youractualhintsite.com';
+
+    secretLink.addEventListener('click', () => {
+        // Get current click count (default to 0 if doesn't exist)
+        let clickCount = parseInt(localStorage.getItem('linkClickCount') || '0');
+        
+        // Increment the count
+        clickCount++;
+        
+        // Save the new count
+        localStorage.setItem('linkClickCount', clickCount);
+
+        if (clickCount === 1) {
+            // First click - go to rickroll
+            window.location.href = rickrollURL;
+        } else {
+            // Second click or more - go to actual hint
+            window.location.href = finalHintURL;
+        }
+    });
+    </script>
+
 </body>
 </html>
