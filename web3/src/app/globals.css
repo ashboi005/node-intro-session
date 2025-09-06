@@ -23,9 +23,9 @@
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
 
-    /* Custom Brand colors for the glow effect */
-    --brand: 27 96% 61%;
-    --brand-foreground: 31 97% 72%;
+    /* Custom Brand colors for the cyber glow effect */
+    --brand: 195 100% 50%; /* Electric Blue */
+    --brand-foreground: 195 100% 60%; /* Lighter Electric Blue */
   }
 
   .dark {
@@ -34,8 +34,87 @@
     --foreground: 210 40% 98%;
     /* ... other dark mode variables */
 
-    /* Custom Brand colors for dark mode */
-    --brand: 31 97% 72%;
-    --brand-foreground: 27 96% 61%;
+    /* Custom Brand colors for dark mode cyber theme */
+    --brand: 195 100% 50%; /* Electric Blue */
+    --brand-foreground: 195 100% 60%; /* Lighter Electric Blue */
   }
+}
+
+/* Cyber Animated Background Lines - Spiral Motion */
+@keyframes spiralClockwise {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(300px) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(300px) rotate(-360deg);
+  }
+}
+
+@keyframes spiralCounterClockwise {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(250px) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg) translateX(250px) rotate(360deg);
+  }
+}
+
+@keyframes spiralLarge {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(400px) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(400px) rotate(-360deg);
+  }
+}
+
+@keyframes spiralSmall {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(150px) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg) translateX(150px) rotate(360deg);
+  }
+}
+
+@keyframes spiralElliptical {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) translateX(350px) scaleY(0.6) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) translateX(350px) scaleY(0.6) rotate(-360deg);
+  }
+}
+
+@keyframes spiralVertical {
+  0% {
+    transform: translate(-50%, -50%) rotate(90deg) translateX(280px) rotate(-90deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(450deg) translateX(280px) rotate(-450deg);
+  }
+}
+
+.cyber-spiral-1 {
+  animation: spiralClockwise 40s linear infinite;
+}
+
+.cyber-spiral-2 {
+  animation: spiralCounterClockwise 35s linear infinite;
+}
+
+.cyber-spiral-3 {
+  animation: spiralLarge 50s linear infinite;
+}
+
+.cyber-spiral-4 {
+  animation: spiralSmall 30s linear infinite;
+}
+
+.cyber-spiral-5 {
+  animation: spiralElliptical 45s linear infinite;
+}
+
+.cyber-spiral-6 {
+  animation: spiralVertical 38s linear infinite;
 }
