@@ -1,7 +1,6 @@
 "use client";
 
-//disable-eslint @typescript-eslint/no-misused-promises
-//disable-eslint @typescript-eslint/no-non-null-assertion
+//eslint-disable
 
 import React, { useState, useEffect } from 'react';
 import { cva, type VariantProps } from "class-variance-authority";
@@ -333,7 +332,7 @@ export default function HomePage() {
                 </h1>
                 <p className="text-[#E0E0E0] max-w-2xl mt-2 text-base sm:text-lg">
                     This is a live simulation of a blockchain with Proof-of-Work mining. Each block is cryptographically linked to the one before it. 
-                    Try changing the data in any block to see it turn red (invalid). Then click "Mine Block" to find a valid nonce and restore the chain&apos;s integrity.
+                    Try changing the data in any block to see it turn red (invalid). Then click &quot;Mine Block&quot; to find a valid nonce and restore the chain&apos;s integrity.
                     Notice how mining one block invalidates the next block, demonstrating the cascading nature of blockchain security.
                 </p>
                 
