@@ -1,5 +1,8 @@
 "use client";
 
+//disable-eslint @typescript-eslint/no-misused-promises
+//disable-eslint @typescript-eslint/no-non-null-assertion
+
 import React, { useState, useEffect } from 'react';
 import { cva, type VariantProps } from "class-variance-authority";
 import { twMerge } from "tailwind-merge";
